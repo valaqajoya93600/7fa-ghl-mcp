@@ -1,43 +1,27 @@
 {
   "name": "ghl-agency-mcp",
   "version": "1.0.0",
-  "description": "Efficient GoHighLevel MCP server for agency management with 34 essential tools",
   "type": "module",
   "main": "dist/index.js",
-  "bin": {
-    "ghl-agency-mcp": "dist/index.js"
-  },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "start": "node dist/index.js",
-    "clean": "rm -rf dist",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/http-server.js",
+    "dev": "tsx watch src/http-server.ts",
     "prepare": "npm run build"
-  },
-  "keywords": [
-    "mcp",
-    "gohighlevel",
-    "claude",
-    "agency",
-    "crm"
-  ],
-  "author": "Robby Higgins",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
-    "axios": "^1.6.5",
-    "dotenv": "^16.3.1"
+    "express": "^4.18.2",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.10.6",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.5",
+    "tsc-alias": "^1.8.8",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
-  "files": [
-    "dist/",
-    "README.md",
-    ".env.example"
-  ]
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
