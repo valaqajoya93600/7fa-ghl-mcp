@@ -27,9 +27,9 @@ class UnifiedMCPServer {
 
   private setupExpress(): void {
     this.app.use(cors({
-      origin: ['https://chat.openai.com', 'http://localhost:*'],
+      origin: ['https://chat.openai.com', 'http://localhost:*', '*.vercel.app'],
       methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Session-Id', 'X-MCP-Session-Id', 'MCP-Session-Id'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Session-Id', 'X-MCP-Session-Id', 'MCP-Session-Id', 'X-Location-Id', 'X-GHL-Domain'],
       credentials: true
     }));
     this.app.use(express.json({ limit: '5mb' }));
@@ -42,22 +42,27 @@ class UnifiedMCPServer {
   }
 
   private async handleMcpRequest(req: express.Request, res: express.Response) {
+    console.log(`[Auth] Received request. Headers present: Authorization (${req.headers.authorization ? 'Yes' : 'No'}), X-Location-Id (${req.headers['x-location-id'] ? 'Yes' : 'No'}), X-GHL-Domain (${req.headers['x-ghl-domain'] ? 'Yes' : 'No'}).`);
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized: Missing or invalid Bearer token.' });
+      return res.status(400).json({ error: 'Bad Request: Missing or invalid Authorization header. Expected Bearer token.' });
     }
     const apiKey = authHeader.split(' ')[1];
 
-    const locationId = req.headers.locationid as string || process.env.GHL_LOCATION_ID;
+    const locationId = req.headers['x-location-id'] as string;
     if (!locationId) {
-        return res.status(400).json({ error: 'Bad Request: Missing Location ID in headers or environment variables.' });
+        return res.status(400).json({ error: 'Bad Request: Missing X-Location-Id header.' });
     }
 
-    const ghlConfig: GHLConfig = {
-      apiKey,
-      locationId,
-      baseUrl: process.env.GHL_BASE_URL || 'https://services.leadconnectorhq.com',
-    };
+    const ghlDomain = req.headers['x-ghl-domain'] as string;
+    if (!ghlDomain) {
+        return res.status(400).json({ error: 'Bad Request: Missing X-GHL-Domain header.' });
+    }
+
+    console.log(`[Auth] Authentication successful. Initializing client for locationId ending in ...${locationId.slice(-4)}`);
+
+    const ghlConfig: GHLConfig = { apiKey, locationId, baseUrl: ghlDomain };
     const apiClient = new GHLApiClient(ghlConfig);
 
     const categoryName = req.params.category;
@@ -79,7 +84,6 @@ class UnifiedMCPServer {
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     });
 
-    // ... (Transport handling logic remains the same)
     try {
         let transport: StreamableHTTPServerTransport | undefined;
         const sidHeader = (req.headers['x-session-id'] || req.headers['x-mcp-session-id'] || req.headers['mcp-session-id']) as string | undefined;
@@ -93,7 +97,6 @@ class UnifiedMCPServer {
                 sessionIdGenerator: () => randomUUID(),
                 onsessioninitialized: (sid: string) => {
                     this.transports.set(sid, transport!);
-                    console.log(`[MCP] Session for '${categoryName}' initialized: ${sid}`);
                 },
             });
             await mcpServer.connect(transport);
@@ -104,7 +107,6 @@ class UnifiedMCPServer {
         transport.onclose = () => {
             if (transport?.sessionId) {
                 this.transports.delete(transport.sessionId);
-                console.log(`[MCP] Session for '${categoryName}' closed: ${transport.sessionId}`);
             }
         };
     } catch (error) {

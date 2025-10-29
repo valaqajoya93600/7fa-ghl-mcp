@@ -8,7 +8,7 @@ export class GHLApiClient {
   constructor(config: GHLConfig) {
     this.locationId = config.locationId;
     this.client = axios.create({
-      baseURL: config.baseUrl,
+      baseURL: config.baseUrl, // Use the domain from the header
       headers: {
         'Authorization': `Bearer ${config.apiKey}`,
         'Version': '2021-07-28',
@@ -17,12 +17,15 @@ export class GHLApiClient {
   }
 
   public async makeRequest(method: string, endpoint: string, data: any = {}, params: any = {}): Promise<any> {
+    // Automatically add locationId to requests where it's needed
+    const finalParams = { ...params, locationId: this.locationId };
+
     try {
       const response = await this.client.request({
         method,
         url: endpoint,
         data,
-        params,
+        params: finalParams,
       });
       return response.data;
     } catch (error) {
