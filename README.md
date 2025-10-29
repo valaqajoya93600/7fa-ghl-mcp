@@ -16,7 +16,8 @@ An efficient GoHighLevel MCP server designed for agency management with 34 essen
 ### 1. Clone and Install
 
 ```bash
-cd "/Users/robbyhiggins/Documents/MCP Servers/ghl-agency-mcp"
+git clone https://github.com/your-repo/ghl-agency-mcp.git
+cd ghl-agency-mcp
 npm install
 ```
 
@@ -44,7 +45,18 @@ DEBUG=true      # Enable debug logging
 npm run build
 ```
 
-### 4. Configure Claude Desktop
+### 4. Running the Server
+
+You can run the server in two modes:
+
+**A) HTTP Server (for local development or custom deployments)**
+
+```bash
+npm start
+```
+The server will run on `http://localhost:3000`.
+
+**B) Stdio Server (for Claude Desktop)**
 
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
@@ -53,7 +65,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "ghl-agency": {
       "command": "node",
-      "args": ["/Users/robbyhiggins/Documents/MCP Servers/ghl-agency-mcp/dist/index.js"],
+      "args": ["/path/to/your/ghl-agency-mcp/dist/index.js"],
       "env": {
         "GHL_API_KEY": "your_private_integration_api_key",
         "GHL_LOCATION_ID": "your_location_id",
@@ -63,6 +75,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   }
 }
 ```
+*Replace `/path/to/your/ghl-agency-mcp` with the actual path to the project directory.*
 
 ### 5. Restart Claude Desktop
 
@@ -70,132 +83,69 @@ Quit and restart Claude Desktop. Look for the 🔨 tools icon to confirm connect
 
 ## Available Tools
 
-### Discovery Tools (5)
-- `get_location` - View account structure
-- `get_location_custom_fields` - See custom data fields
-- `get_location_templates` - View email/SMS templates
-- `ghl_get_workflows` - List all workflows
-- `get_email_campaigns` - View email campaigns
+The server provides **34 tools** across several categories:
+
+### Discovery (5)
+- `get_location`, `get_location_custom_fields`, `get_location_templates`, `ghl_get_workflows`, `get_email_campaigns`
 
 ### Contact Management (11)
-- `search_contacts` - Find contacts
-- `get_contact` - View contact details
-- `create_contact` - Add new contact
-- `update_contact` - Edit contact
-- `add_contact_tags` - Add tags to contact ⭐
-- `remove_contact_tags` - Remove tags
-- `bulk_update_contact_tags` - Update multiple contacts ⭐
-- `get_contact_notes` - View notes
-- `create_contact_note` - Add notes
-- `get_contact_tasks` - View tasks
-- `get_duplicate_contact` - Check for duplicates
+- `search_contacts`, `get_contact`, `create_contact`, `update_contact`, `add_contact_tags`, `remove_contact_tags`, `bulk_update_contact_tags`, `get_contact_notes`, `create_contact_note`, `get_contact_tasks`, `get_duplicate_contact`
 
 ### Tag Management (3)
-- `get_location_tags` - View all tags
-- `get_location_tag` - View specific tag
-- `create_location_tag` - Create new tag
+- `get_location_tags`, `get_location_tag`, `create_location_tag`
 
 ### Custom Fields (3)
-- `create_location_custom_field` - Add custom field
-- `update_location_custom_field` - Edit custom field
-- `get_location_custom_field` - View custom field
+- `create_location_custom_field`, `update_location_custom_field`, `get_location_custom_field`
 
 ### Campaigns & Workflows (7)
-- `add_contact_to_campaign` - Start email sequence ⭐
-- `remove_contact_from_campaign` - Stop sequence
-- `remove_contact_from_all_campaigns` - Emergency stop
-- `add_contact_to_workflow` - Trigger automation ⭐
-- `remove_contact_from_workflow` - Stop automation
-- `get_email_templates` - View templates
-- `create_email_template` - Save template
+- `add_contact_to_campaign`, `remove_contact_from_campaign`, `remove_contact_from_all_campaigns`, `add_contact_to_workflow`, `remove_contact_from_workflow`, `get_email_templates`, `create_email_template`
 
 ### Communication (4)
-- `search_conversations` - View conversations
-- `get_conversation` - Read conversation
-- `send_sms` - Send text message
-- `send_email` - Send email
+- `search_conversations`, `get_conversation`, `send_sms`, `send_email`
 
 ### Analytics (2)
-- `search_opportunities` - View opportunities
-- `get_pipelines` - View sales pipelines
-
-## Usage Examples
-
-### Finding and Tagging Agency Providers
-
-```
-"Search for all contacts tagged as 'agency-provider'"
-"Add the tag 'webinar-attendee' to contacts who opened our last email"
-"Show me all contacts in California"
-```
-
-### Campaign Management
-
-```
-"List all active email campaigns"
-"Add John Doe to the 'Welcome Series' campaign"
-"Create an email template for our monthly newsletter"
-```
-
-### Workflow Automation
-
-```
-"Show me all available workflows"
-"Add these 5 contacts to the 'New Provider Onboarding' workflow"
-"Remove contact from all active workflows"
-```
-
-## Safe Mode
-
-When `SAFE_MODE=true`, the server will:
-- Log destructive operations without executing them
-- Require confirmation for sends (SMS/email)
-- Show what would happen before making changes
-
-## Architecture
-
-This server uses efficient patterns:
-- **Lazy Loading** - Tools load on-demand, not upfront
-- **Minimal Descriptions** - 5-10 word tool descriptions
-- **Modular Design** - Clean separation of concerns
-- **Smart Context** - ~8K tokens vs 350K+ for full server
-
-## Troubleshooting
-
-### Server won't start
-- Check your API credentials in `.env`
-- Ensure you're using a Private Integration API key
-- Verify your Location ID is correct
-
-### Tools not showing in Claude
-- Restart Claude Desktop completely
-- Check for syntax errors: `npm run build`
-- Look for the 🔨 icon in Claude Desktop
-
-### API errors
-- Enable debug mode: `DEBUG=true`
-- Check API key has required scopes
-- Verify you're not hitting rate limits
+- `search_opportunities`, `get_pipelines`
 
 ## Development
 
 ```bash
-# Watch mode for development
+# Run HTTP server in watch mode for development
 npm run dev
 
-# Clean and rebuild
-npm run clean && npm run build
+# Build the project
+npm run build
 
-# Check logs (debug mode)
-DEBUG=true npm start
+# Run the production HTTP server
+npm start
+
+# Run the production Stdio server
+npm run start:stdio
 ```
 
-## Support
+## Architecture
 
-This server is designed for agency management workflows. For issues or questions:
-1. Check debug logs with `DEBUG=true`
-2. Verify API credentials and scopes
-3. Ensure you're using the latest version
+This server uses efficient patterns:
+- **Centralized Tool Registry** - Tools are defined once and used by both HTTP and Stdio servers.
+- **Lazy Loading** - Tools load on-demand, not upfront.
+- **Minimal Descriptions** - 5-10 word tool descriptions for context efficiency.
+- **Modular Design** - Clean separation of concerns.
+
+## Troubleshooting
+
+### Server won't start
+- Check your API credentials in `.env`.
+- Ensure you're using a Private Integration API key.
+- Verify your Location ID is correct.
+
+### Tools not showing in Claude
+- Restart Claude Desktop completely.
+- Check for syntax errors: `npm run build`.
+- Look for the 🔨 icon in Claude Desktop.
+
+### API errors
+- Enable debug mode: `DEBUG=true`.
+- Check API key has required scopes.
+- Verify you're not hitting rate limits.
 
 ## License
 
