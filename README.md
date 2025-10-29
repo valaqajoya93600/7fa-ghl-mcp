@@ -1,152 +1,205 @@
-# GHL Agency MCP Server
+# Unified GoHighLevel MCP Server
 
-An efficient GoHighLevel MCP server designed for agency management with 34 essential tools. Built with performance in mind - uses only ~8,000 tokens vs 350,000+ tokens of the full server.
+## 1. Overview
 
-## Features
+This project is a powerful, unified, and scalable GoHighLevel (GHL) MCP Server designed to consolidate the best features from various community projects into a single, well-architected solution.
 
-- **34 Essential Tools** - Focused on agency provider management
-- **Efficient Context Usage** - Lazy loading keeps token usage minimal
-- **Safe Mode** - Optional confirmation for destructive operations
-- **Clean Architecture** - Modular design following best practices
-- **Comprehensive READ** - Full visibility into GoHighLevel data
-- **Targeted WRITE** - Focus on contacts, tags, workflows, and campaigns
+### Key Architectural Features:
 
-## Quick Start
+*   **Modular & Scalable:** Each category of tools (e.g., Contacts, Conversations) is isolated in its own module, making the system easy to maintain and extend.
+*   **Category-Based Endpoints:** To optimize for AI agents, tools are accessible via category-specific URLs (e.g., `/mcp/contacts`). This reduces the "context noise" for the AI, allowing it to focus on a specific task. A global `/mcp/all` endpoint is also available.
+*   **Centralized Tool Management:** A `ToolManager` dynamically loads all available tool categories, making registration of new tools seamless.
+*   **Modern & Robust Core:** Built with Express.js and the latest `@modelcontextprotocol/sdk`, using the recommended `StreamableHTTPServerTransport` for maximum compatibility and performance.
+*   **Deployment-Ready:** Pre-configured for easy deployment on Railway.app.
 
-### 1. Clone and Install
+---
 
-```bash
-git clone https://github.com/your-repo/ghl-agency-mcp.git
-cd ghl-agency-mcp
-npm install
-```
+## 2. Local Development Setup
 
-### 2. Configure Environment
+### Prerequisites
 
-Copy `.env.example` to `.env` and add your credentials:
+*   Node.js >= 18.0.0
+*   A GoHighLevel account
 
-```bash
-cp .env.example .env
-```
+### Steps:
 
-Edit `.env` with your GoHighLevel credentials:
-```env
-GHL_API_KEY=your_private_integration_api_key
-GHL_LOCATION_ID=your_location_id
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repo-url>
+    cd unified-ghl-mcp-server
+    ```
 
-# Optional
-SAFE_MODE=true  # Adds confirmation prompts
-DEBUG=true      # Enable debug logging
-```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-### 3. Build the Server
+3.  **Create an environment file:**
+    Copy the example file:
+    ```bash
+    cp .env.example .env
+    ```
+    Now, edit the `.env` file and add your GoHighLevel credentials:
+    ```env
+    # Required: Get this from Settings > Private Integrations in your GHL account
+    GHL_API_KEY="your_private_integration_api_key"
+    GHL_LOCATION_ID="your_ghl_location_id"
 
-```bash
-npm run build
-```
+    # Optional
+    PORT=8000
+    GHL_BASE_URL="https://services.leadconnectorhq.com"
+    ```
 
-### 4. Running the Server
+4.  **Build and run the server:**
+    For development with auto-reloading:
+    ```bash
+    npm run dev
+    ```
+    To run the production build:
+    ```bash
+    npm run build
+    npm start
+    ```
+    The server will be running on `http://localhost:8000`.
 
-You can run the server in two modes:
+---
 
-**A) HTTP Server (for local development or custom deployments)**
+## 3. Deployment to Railway
 
-```bash
-npm start
-```
-The server will run on `http://localhost:3000`.
+This project is pre-configured for one-click deployment on Railway.
 
-**B) Stdio Server (for Claude Desktop)**
+### Steps:
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+1.  **Create a new Railway project:**
+    *   Go to your Railway dashboard and click "New Project".
+    *   Select "Deploy from a GitHub repo" and choose this repository.
 
-```json
-{
-  "mcpServers": {
-    "ghl-agency": {
-      "command": "node",
-      "args": ["/path/to/your/ghl-agency-mcp/dist/index.js"],
-      "env": {
-        "GHL_API_KEY": "your_private_integration_api_key",
-        "GHL_LOCATION_ID": "your_location_id",
-        "SAFE_MODE": "true"
-      }
-    }
-  }
+2.  **Add Environment Variables:**
+    *   In your new project's dashboard, go to the "Variables" tab.
+    *   Add the following variables with your GHL credentials:
+        *   `GHL_API_KEY`: Your Private Integration API Key.
+        *   `GHL_LOCATION_ID`: Your GoHighLevel Location ID.
+    *   Railway will automatically use the `PORT` variable it provides, so you don't need to set it manually.
+
+3.  **Deploy:**
+    *   Railway will automatically detect the `railway.json` file and the `start` script in `package.json`.
+    *   It will build the project and deploy it. Once the deployment is complete, you will get a public URL for your server.
+
+---
+
+## 4. Developer Guide: Adding a New Tool Category
+
+Our architecture makes it simple to add new categories of tools. Let's say you want to add a "Calendars" category. Here’s how you do it:
+
+### Step 1: Create the Types File
+
+Create a new file at `src/types/calendars.ts`. In this file, you'll define all the TypeScript interfaces for the parameters and return types of your new tools.
+
+```typescript
+// src/types/calendars.ts
+
+// Interface for the parameters of a tool
+export interface MCPGetCalendarsParams {
+  locationId: string;
+}
+
+// Interface for the GHL API response
+export interface GHLCalendar {
+  id: string;
+  name: string;
+  // ... other properties
 }
 ```
-*Replace `/path/to/your/ghl-agency-mcp` with the actual path to the project directory.*
 
-### 5. Restart Claude Desktop
+### Step 2: Create the Tool Class File
 
-Quit and restart Claude Desktop. Look for the 🔨 tools icon to confirm connection.
+Create a new file at `src/tools/calendars.ts`. This class will define the tools and contain the logic to execute them.
 
-## Available Tools
+```typescript
+// src/tools/calendars.ts
 
-The server provides **34 tools** across several categories:
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { GHLApiClient } from '../ghl-client/api-client.js';
+import { MCPGetCalendarsParams } from '../types/calendars.js';
 
-### Discovery (5)
-- `get_location`, `get_location_custom_fields`, `get_location_templates`, `ghl_get_workflows`, `get_email_campaigns`
+export class CalendarTools {
+    constructor(private ghlClient: GHLApiClient) {}
 
-### Contact Management (11)
-- `search_contacts`, `get_contact`, `create_contact`, `update_contact`, `add_contact_tags`, `remove_contact_tags`, `bulk_update_contact_tags`, `get_contact_notes`, `create_contact_note`, `get_contact_tasks`, `get_duplicate_contact`
+    // 1. Define your tools
+    getToolDefinitions(): Tool[] {
+        return [
+            {
+                name: 'get_calendars',
+                description: 'Retrieves all calendars for a location.',
+                inputSchema: {
+                    type: 'object',
+                    properties: { /* ... define params ... */ },
+                }
+            },
+            // ... other calendar-related tools
+        ];
+    }
 
-### Tag Management (3)
-- `get_location_tags`, `get_location_tag`, `create_location_tag`
+    // 2. Implement the execution logic
+    async executeTool(toolName: string, params: any): Promise<any> {
+        switch (toolName) {
+            case 'get_calendars':
+                // Use the shared GHL API client to make the request
+                return await this.ghlClient.makeRequest('GET', '/calendars', {}, params);
 
-### Custom Fields (3)
-- `create_location_custom_field`, `update_location_custom_field`, `get_location_custom_field`
+            // ... other cases
 
-### Campaigns & Workflows (7)
-- `add_contact_to_campaign`, `remove_contact_from_campaign`, `remove_contact_from_all_campaigns`, `add_contact_to_workflow`, `remove_contact_from_workflow`, `get_email_templates`, `create_email_template`
-
-### Communication (4)
-- `search_conversations`, `get_conversation`, `send_sms`, `send_email`
-
-### Analytics (2)
-- `search_opportunities`, `get_pipelines`
-
-## Development
-
-```bash
-# Run HTTP server in watch mode for development
-npm run dev
-
-# Build the project
-npm run build
-
-# Run the production HTTP server
-npm start
-
-# Run the production Stdio server
-npm run start:stdio
+            default:
+                throw new Error(`Unknown calendar tool: ${toolName}`);
+        }
+    }
+}
 ```
 
-## Architecture
+### Step 3: Register the New Category in ToolManager
 
-This server uses efficient patterns:
-- **Centralized Tool Registry** - Tools are defined once and used by both HTTP and Stdio servers.
-- **Lazy Loading** - Tools load on-demand, not upfront.
-- **Minimal Descriptions** - 5-10 word tool descriptions for context efficiency.
-- **Modular Design** - Clean separation of concerns.
+The final step is to make the server aware of your new category. Open `src/core/tool-manager.ts` and simply import and instantiate your new class in the `loadTools` method.
 
-## Troubleshooting
+```typescript
+// src/core/tool-manager.ts
 
-### Server won't start
-- Check your API credentials in `.env`.
-- Ensure you're using a Private Integration API key.
-- Verify your Location ID is correct.
+import { GHLApiClient } from '../ghl-client/api-client.js';
+import { ContactTools } from '../tools/contacts.js';
+import { ConversationTools } from '../tools/conversations.js';
+import { CalendarTools } from '../tools/calendars.js'; // 1. Import your new class
+import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
-### Tools not showing in Claude
-- Restart Claude Desktop completely.
-- Check for syntax errors: `npm run build`.
-- Look for the 🔨 icon in Claude Desktop.
+export class ToolManager {
+  // ... (constructor and other methods)
 
-### API errors
-- Enable debug mode: `DEBUG=true`.
-- Check API key has required scopes.
-- Verify you're not hitting rate limits.
+  public async loadTools(): Promise<void> {
+    console.log('[ToolManager] Dynamically loading tool categories...');
 
-## License
+    // ... (existing categories)
 
-MIT
+    // 2. Load CalendarTools
+    const calendarsCategory = new CalendarTools(this.apiClient);
+    this.toolCategories.set('calendars', calendarsCategory);
+
+    this.compileTools();
+    console.log('[ToolManager] All tool categories loaded.');
+  }
+
+  // ... (rest of the file)
+}
+```
+
+That's it! The server will now automatically expose your new tools under the `/mcp/calendars` endpoint and include them in the global `/mcp/all` endpoint.
+
+---
+
+## 5. API Endpoints
+
+The server exposes the following endpoints:
+
+*   `/health`: A health check endpoint that returns the server status and a list of loaded tool categories.
+*   `/mcp/all`: The main MCP endpoint that provides access to **all** available tools from all categories.
+*   `/mcp/{category}`: A category-specific endpoint that provides access only to the tools within that category. Examples:
+    *   `/mcp/contacts`
+    *   `/mcp/conversations`
+    *   *(New categories you add will automatically have their own endpoint here)*
