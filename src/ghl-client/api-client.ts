@@ -26,7 +26,7 @@ export class GHLApiClient {
       });
       return response.data;
     } catch (error) {
-      console.error(`[GHLApiClient] Error making request to ${endpoint}:`, error);
+      console.error(`[GHLApiClient] Error making request to ${endpoint} for location ${this.locationId}:`, error);
       throw error;
     }
   }

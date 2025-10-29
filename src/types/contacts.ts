@@ -1,46 +1,15 @@
 // This file contains all TypeScript interfaces and types related to Contacts.
 
-export interface GHLContact { /* ... definition ... */ }
-export interface GHLTask { /* ... definition ... */ }
-export interface GHLNote { /* ... definition ... */ }
+export interface GHLContact { id: string; /* ... other properties */ }
+export interface GHLTask { id: string; /* ... other properties */ }
+export interface GHLNote { id: string; /* ... other properties */ }
 // ... and all other related interfaces.
 
-export interface MCPCreateContactParams {
-    firstName?: string;
-    lastName?: string;
-    email: string;
-    phone?: string;
-    tags?: string[];
-    source?: string;
-}
-
-export interface MCPSearchContactsParams {
-    query?: string;
-    email?: string;
-    phone?: string;
-    limit?: number;
-}
-
-export interface MCPUpdateContactParams {
-    contactId: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    tags?: string[];
-}
-
-export interface MCPAddContactTagsParams {
-    contactId: string;
-    tags: string[];
-}
-
-export interface MCPRemoveContactTagsParams {
-    contactId: string;
-    tags: string[];
-}
-
-// ... and so on for all other parameter interfaces (MCPGetContactTasksParams, etc.)
+export interface MCPCreateContactParams { firstName?: string; lastName?: string; email: string; phone?: string; tags?: string[]; source?: string; }
+export interface MCPSearchContactsParams { query?: string; email?: string; phone?: string; limit?: number; }
+export interface MCPUpdateContactParams { contactId: string; firstName?: string; lastName?: string; email?: string; phone?: string; tags?: string[]; }
+export interface MCPAddContactTagsParams { contactId: string; tags: string[]; }
+export interface MCPRemoveContactTagsParams { contactId: string; tags: string[]; }
 export interface MCPGetContactTasksParams { contactId: string; }
 export interface MCPCreateContactTaskParams { contactId: string; title: string; dueDate: string; body?: string; completed?: boolean; assignedTo?: string; }
 export interface MCPGetContactTaskParams { contactId: string; taskId: string; }

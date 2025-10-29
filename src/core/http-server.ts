@@ -52,7 +52,7 @@ class UnifiedMCPServer {
       credentials: true
     }));
     this.app.use(express.json({ limit: '5mb' }));
-    this.app.use((req, res, next) => {
+    this.app.use((req, _res, next) => {
       console.log(`[HTTP] ${req.method} ${req.path}`);
       next();
     });
@@ -60,8 +60,8 @@ class UnifiedMCPServer {
 
   private setupRoutes(): void {
     // ... (same as before)
-    this.app.get('/health', (req, res) => {
-      res.json({
+    this.app.get('/health', (_req, _res) => {
+      _res.json({
         status: 'healthy',
         server: 'unified-ghl-mcp',
         version: '2.0.0',
@@ -72,7 +72,7 @@ class UnifiedMCPServer {
 
     this.app.all('/mcp/:category', this.handleMcpRequest.bind(this));
 
-    this.app.get('/', (req, res) => {
+    this.app.get('/', (_req, res) => {
         res.json({
             name: 'Unified GoHighLevel MCP Server',
             version: '2.0.0',
