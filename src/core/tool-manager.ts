@@ -4,35 +4,26 @@ import { ConversationTools } from '../tools/conversations.js'; // Import the new
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export class ToolManager {
-  private apiClient: GHLApiClient;
-  private toolCategories: Map<string, any> = new Map();
+  private toolCategoryClasses: Map<string, any> = new Map();
   private allTools: Tool[] = [];
 
-  constructor(apiClient: GHLApiClient) {
-    this.apiClient = apiClient;
-  }
+  constructor() {}
 
   public async loadTools(): Promise<void> {
-    console.log('[ToolManager] Dynamically loading tool categories...');
+    console.log('[ToolManager] Loading tool category classes...');
+    this.toolCategoryClasses.set('contacts', ContactTools);
+    this.toolCategoryClasses.set('conversations', ConversationTools);
 
-    // 1. Load ContactTools
-    const contactsCategory = new ContactTools(this.apiClient);
-    this.toolCategories.set('contacts', contactsCategory);
-
-    // 2. Load ConversationTools (NEW)
-    const conversationsCategory = new ConversationTools(this.apiClient);
-    this.toolCategories.set('conversations', conversationsCategory);
-
-    // ... In the future, we will load other categories here.
-
-    this.compileTools();
+    this.compileAllToolDefinitions();
     console.log('[ToolManager] All tool categories loaded.');
   }
 
-  private compileTools(): void {
+  private compileAllToolDefinitions(): void {
       this.allTools = [];
-      for (const category of this.toolCategories.values()) {
-          const definitions = category.getToolDefinitions();
+      for (const categoryClass of this.toolCategoryClasses.values()) {
+          // Temporarily instantiate to get definitions. This is suboptimal but works for now.
+          const tempInstance = new categoryClass(null);
+          const definitions = tempInstance.getToolDefinitions();
           this.allTools.push(...definitions);
       }
   }
@@ -41,17 +32,19 @@ export class ToolManager {
       if (categoryName === 'all') {
           return this.allTools;
       }
-      const category = this.toolCategories.get(categoryName);
-      if (!category) {
+      const categoryClass = this.toolCategoryClasses.get(categoryName);
+      if (!categoryClass) {
           return [];
       }
-      return category.getToolDefinitions();
+      const tempInstance = new categoryClass(null);
+      return tempInstance.getToolDefinitions();
   }
 
   public getToolCount() {
     const categoryCounts: { [key: string]: number } = {};
-    for (const [name, category] of this.toolCategories.entries()) {
-        categoryCounts[name] = category.getToolDefinitions().length;
+    for (const [name, categoryClass] of this.toolCategoryClasses.entries()) {
+        const tempInstance = new categoryClass(null);
+        categoryCounts[name] = tempInstance.getToolDefinitions().length;
     }
 
     return {
@@ -60,7 +53,11 @@ export class ToolManager {
     };
   }
 
-  public getCategoryHandler(categoryName: string): any {
-    return this.toolCategories.get(categoryName);
+  public getCategoryHandler(categoryName: string, apiClient: GHLApiClient): any {
+    const categoryClass = this.toolCategoryClasses.get(categoryName);
+    if (!categoryClass) {
+        return null;
+    }
+    return new categoryClass(apiClient);
   }
 }
